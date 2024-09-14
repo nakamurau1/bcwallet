@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 #
-# bcwallet.rb: Educational Bitcoin Client 
+# bcwallet.rb: Educational Bitcoin Client
 #
 # This is a tiny Bitcoin client implementation which uses
 # Simplified Payment Verification (SPV).
@@ -23,19 +23,19 @@ HOST = 'localhost'
 # This software is licensed under the MIT license.
 #
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2014 peryaudo
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -155,8 +155,7 @@ class Key
     if der
       @key = OpenSSL::PKey::EC.new([der].pack('H*'))
     else
-      @key = OpenSSL::PKey::EC.new('secp256k1')
-      @key = @key.generate_key
+      @key = OpenSSL::PKey::EC.generate('secp256k1')
     end
 
     @key.check_key
@@ -176,7 +175,7 @@ class Key
     Key.encode_base58check(:public_key, Key.hash160(@key.public_key.to_bn.to_s(2)))
   end
 
-  # 
+  #
   # Convert the private key to Bitcoin private key import format.
   #
   def to_private_key_s
@@ -209,7 +208,7 @@ class BloomFilter
   public
   #
   # len = length of bloom filter
-  # hash_funcs = number of hash functions to use 
+  # hash_funcs = number of hash functions to use
   # tweak = a random number
   #
   def initialize(len, hash_funcs, tweak)
@@ -395,7 +394,7 @@ class Message
     res
   end
 
-  # 
+  #
   # Read a message and parse it using message definitions.
   #
   def read(socket)
@@ -528,7 +527,7 @@ class Message
 
   def fixed_integer(templ, len, rw, val = nil)
     case rw
-    when :read 
+    when :read
       read_bytes(len).unpack(templ).first
     when :write
       write_bytes([val].pack(templ))
@@ -803,7 +802,7 @@ class Blockchain
   #
   # Set spent flags for all tx_outs.
   # If the tx_out is already spent on another transaction's tx_in, it will be set.
-  # 
+  #
   def set_spent_for_tx_outs!
     @data[:txs].each do |tx_hash, tx|
       tx[:tx_in].each do |tx_in|
@@ -841,7 +840,7 @@ class Blockchain
     unless script[0, 3]  == ['76a914'].pack('H*') &&
            script[23, 2] == ['88ac'].pack('H*') &&
            script.length == 25
-      raise 'unsupported script format' 
+      raise 'unsupported script format'
     end
 
     script[3, 20]
@@ -855,7 +854,7 @@ end
 class Network
   attr_reader :status, :data
 
-  # 
+  #
   # keys = { name => ECDSA key objects }
   #
   def initialize(keys, data_file_name)
@@ -909,14 +908,14 @@ class Network
     @is_sync_finished
   end
 
-  # 
+  #
   # Send coins to the address.
   # from_key = Key object which the client sends coins from
   # to_addr  = Receiving address (string)
   # transaction_fee = Transaction fee which miners receive
   #
   def send(from_key, to_addr, amount, transaction_fee = 0)
-    # The process of announcing a created transaction is as follows: 
+    # The process of announcing a created transaction is as follows:
     #   Generate tx message and get its hash, and send inv message with the hash to the remote host.
     #   Then the remote host will send getdata, so you can now actually send tx message.
 
@@ -979,7 +978,7 @@ class Network
 
       your_addr: nil, # I found that at least Satoshi client doesn't check it,
       my_addr:   nil, # so it will be enough for this client.
-      
+
       nonce:     (rand(1 << 64) - 1), # A random number.
 
       agent:     '/bcwallet.rb:1.00/',
@@ -997,7 +996,7 @@ class Network
     hash_funcs = 10
     tweak = rand(1 << 32) - 1
 
-    bf = BloomFilter.new(512, hash_funcs, tweak) 
+    bf = BloomFilter.new(512, hash_funcs, tweak)
 
     @keys.each do |_, key|
       bf.insert(key.to_public_key)
@@ -1073,7 +1072,7 @@ class Network
     payload = @message.serialize(@created_transaction)
 
     @created_transaction[:hash] = Key.hash256(payload)
-    
+
     @message.write(@socket, {
       command: :inv,
       inventory: [{type: Message::MSG_TX, hash: @created_transaction[:hash]}]
@@ -1115,7 +1114,7 @@ class Network
   end
 
   def dispatch_version(message)
-    # This is handshake process: 
+    # This is handshake process:
 
     # Local -- version -> Remote
     # Local <- version -- Remote
@@ -1217,7 +1216,7 @@ class Network
     # and other tx_ins' signature_scripts are empty.
     # (make sure that var_int for the length is also set to zero)
     #
-    # For further information, see: 
+    # For further information, see:
     #   https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png
     #
 
@@ -1320,7 +1319,7 @@ class BCWallet
   def load_keys
     @keys = {}
 
-    return unless File.exists?(@keys_file_name)
+    return unless File.exist?(@keys_file_name)
 
     open(@keys_file_name, 'r') do |file|
       file.read.lines.each do |line|
@@ -1455,4 +1454,3 @@ if caller.length == 0
 
   bcwallet.run
 end
-
