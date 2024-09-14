@@ -670,7 +670,7 @@ class Blockchain
   end
 
   def load_data
-    return unless File.exists?(@data_file_name)
+    return unless File.exist?(@data_file_name)
 
     open(@data_file_name, 'rb') do |file|
       @data = Marshal.restore(file)
